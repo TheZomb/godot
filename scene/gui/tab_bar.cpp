@@ -986,14 +986,15 @@ void TabBar::_update_cache(bool p_update_hover) {
 		tabs.write[i].text_buf->set_width(-1);
 		tabs.write[i].size_text = Math::ceil(tabs[i].text_buf->get_size().x);
 		tabs.write[i].size_cache = _get_tab_width(i); // SUPPOSED to be actual width of tab
-		// what should be included is: 
+		Ref<StyleBox> style = _get_tab_style(i);
+		// what should be included is:
 		//
-		// border_width_left(if NO content_margin_left), 
-		// content_margin_left, 
-		// icon_size.width, 
-		// h_seperation, 
-		// size_text, 
-		// content_margin_right, 
+		// border_width_left(if NO content_margin_left),
+		// content_margin_left,
+		// icon_size.width,
+		// h_seperation,
+		// size_text,
+		// content_margin_right,
 		// border_width_right(if NO content_margin_right)
 
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
@@ -1007,12 +1008,12 @@ void TabBar::_update_cache(bool p_update_hover) {
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
 			// if tab size is still to large we need to shrink h_seperation
 
-			int num_sep_applied = 2; // TODO: how often h_seperation was applied 
-			
+			int num_sep_applied = 2; // TODO: how often h_seperation was applied
+
 			int size_sepless = tabs[i].size_cache - theme_cache.h_separation * num_sep_applied; // size of the tab without seperation value
-			int mw = MAX(size_sepless, max_width); 
-			
-			theme_cache.h_separation = MAX(mw/num_sep_applied, 1);
+			int mw = MAX(size_sepless, max_width);
+
+			theme_cache.h_separation = MAX((mw - size_sepless) / num_sep_applied, 1);
 			tabs.write[i].size_cache = size_sepless + theme_cache.h_separation * num_sep_applied;
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
@@ -1020,8 +1021,16 @@ void TabBar::_update_cache(bool p_update_hover) {
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
 			// if tab size is still to large we need to shrink content_margins
-		}
 
+			int left_margin = (int)style->get_margin(SIDE_LEFT);
+			int right_margin = (int)style->get_margin(SIDE_RIGHT);
+			int size_marginless = tabs[i].size_cache - left_margin - right_margin;
+			int mw = MAX(size_marginless, max_width);
+
+			style->set_content_margin(SIDE_LEFT, (mw - size_marginless) * (left_margin/(left_margin + right_margin)));
+			style->set_content_margin(SIDE_RIGHT, (mw - size_marginless) * (right_margin/(left_margin + right_margin)));
+			tabs.write[i].size_cache = size_marginless + style->get_margin(SIDE_LEFT) + style->get_margin(SIDE_RIGHT);
+		}
 
 		if (i < offset || i > max_drawn_tab) {
 			tabs.write[i].ofs_cache = 0;
@@ -1484,7 +1493,7 @@ int TabBar::_get_tab_width(int p_idx) const {
 
 	Ref<StyleBox> style = _get_tab_style(p_idx);
 
-	// get content_margins 
+	// get content_margins
 	int x = 0;
 	x += style->get_margin(SIDE_LEFT);
 	x += style->get_margin(SIDE_RIGHT);
@@ -1878,7 +1887,7 @@ void TabBar::_bind_methods() {
 	BIND_ENUM_CONSTANT(ALIGNMENT_LEFT);
 	BIND_ENUM_CONSTANT(ALIGNMENT_CENTER);
 	BIND_ENUM_CONSTANT(ALIGNMENT_RIGHT);
-		BIND_ENUM_CONSTANT(ALIGNMENT_MAX);
+	BIND_ENUM_CONSTANT(ALIGNMENT_MAX);
 
 	BIND_ENUM_CONSTANT(CLOSE_BUTTON_SHOW_NEVER);
 	BIND_ENUM_CONSTANT(CLOSE_BUTTON_SHOW_ACTIVE_ONLY);
