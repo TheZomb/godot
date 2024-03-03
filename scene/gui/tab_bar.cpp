@@ -996,16 +996,32 @@ void TabBar::_update_cache(bool p_update_hover) {
 	for (int i = 0; i < tabs.size(); i++) {
 		tabs.write[i].text_buf->set_width(-1);
 		tabs.write[i].size_text = Math::ceil(tabs[i].text_buf->get_size().x);
-		tabs.write[i].size_cache = get_tab_width(i);
+		tabs.write[i].size_cache = get_tab_width(i); // SUPPOSED to be actual width of tab
+		// what should be included is: 
+		//
+		// border_width_left(if NO content_margin_left), 
+		// content_margin_left, 
+		// icon_size.width, 
+		// h_seperation, 
+		// size_text, 
+		// content_margin_right, 
+		// border_width_right(if NO content_margin_right)
 
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
-			int size_textless = tabs[i].size_cache - tabs[i].size_text;
-			int mw = MAX(size_textless, max_width);
+			int size_textless = tabs[i].size_cache - tabs[i].size_text; // size of the tab without text width
+			int mw = MAX(size_textless, max_width); // is max_width if tab is smaller than it after text width cut
 
-			tabs.write[i].size_text = MAX(mw - size_textless, 1);
-			tabs.write[i].text_buf->set_width(tabs[i].size_text);
-			tabs.write[i].size_cache = size_textless + tabs[i].size_text;
+			tabs.write[i].size_text = MAX(mw - size_textless, 1); // mw - size_textless if posisitve is space until max_width
+			tabs.write[i].text_buf->set_width(tabs[i].size_text); // change width of the text (cutting it)
+			tabs.write[i].size_cache = size_textless + tabs[i].size_text; // after cutting the text update tab size
 		}
+		if (max_width > 0 && tabs[i].size_cache > max_width) {
+			// if tab size is still to large we need to shrink h_seperation
+		}
+		if (max_width > 0 && tabs[i].size_cache > max_width) {
+			// if tab size is still to large we need to shrink icon_size
+		}
+
 
 		if (i < offset || i > max_drawn_tab) {
 			tabs.write[i].ofs_cache = 0;
@@ -1449,6 +1465,7 @@ int TabBar::get_tab_width(int p_idx) const {
 
 	Ref<StyleBox> style;
 
+	// Choose the correct style
 	if (tabs[p_idx].disabled) {
 		style = theme_cache.tab_disabled_style;
 	} else if (current == p_idx) {
@@ -1459,39 +1476,36 @@ int TabBar::get_tab_width(int p_idx) const {
 	} else {
 		style = theme_cache.tab_unselected_style;
 	}
-	int x = style->get_minimum_size().width;
 
+	// get content_margins 
+	int x = style->get_minimum_size().width;
+	int number_tab_elements = 0;
+
+	// add Icon
 	if (tabs[p_idx].icon.is_valid()) {
 		const Size2 icon_size = _get_tab_icon_size(p_idx);
-		x += icon_size.width + theme_cache.h_separation;
+		x += icon_size.width;
+		number_tab_elements++;
 	}
 
+	// add Text
 	if (!tabs[p_idx].text.is_empty()) {
-		x += tabs[p_idx].size_text + theme_cache.h_separation;
+		x += tabs[p_idx].size_text;
+		number_tab_elements++;
 	}
 
+	// add Close Button
 	bool close_visible = cb_displaypolicy == CLOSE_BUTTON_SHOW_ALWAYS || (cb_displaypolicy == CLOSE_BUTTON_SHOW_ACTIVE_ONLY && p_idx == current);
-
-	if (tabs[p_idx].right_button.is_valid()) {
-		Ref<StyleBox> btn_style = theme_cache.button_hl_style;
-		Ref<Texture2D> rb = tabs[p_idx].right_button;
-
-		if (close_visible) {
-			x += btn_style->get_minimum_size().width + rb->get_width();
-		} else {
-			x += btn_style->get_margin(SIDE_LEFT) + rb->get_width() + theme_cache.h_separation;
-		}
-	}
 
 	if (close_visible) {
 		Ref<StyleBox> btn_style = theme_cache.button_hl_style;
 		Ref<Texture2D> cb = theme_cache.close_icon;
-		x += btn_style->get_margin(SIDE_LEFT) + cb->get_width() + theme_cache.h_separation;
+		x += btn_style->get_margin(SIDE_LEFT) + cb->get_width() + btn_style->get_margin(SIDE_RIGHT); // right margin should obviously be added too
+		number_tab_elements++;
 	}
 
-	if (x > style->get_minimum_size().width) {
-		x -= theme_cache.h_separation;
-	}
+	// Space between elements
+	x += MAX((number_tab_elements - 1) * theme_cache.h_separation, 0);
 
 	return x;
 }
@@ -1502,6 +1516,7 @@ Size2 TabBar::_get_tab_icon_size(int p_index) const {
 	Size2 icon_size = tab.icon->get_size();
 
 	int icon_max_width = 0;
+	// TODO TheZomb: rework or move it to _update_cache
 	if (theme_cache.icon_max_width > 0) {
 		icon_max_width = theme_cache.icon_max_width;
 	}
@@ -1854,7 +1869,7 @@ void TabBar::_bind_methods() {
 	BIND_ENUM_CONSTANT(ALIGNMENT_LEFT);
 	BIND_ENUM_CONSTANT(ALIGNMENT_CENTER);
 	BIND_ENUM_CONSTANT(ALIGNMENT_RIGHT);
-	BIND_ENUM_CONSTANT(ALIGNMENT_MAX);
+		BIND_ENUM_CONSTANT(ALIGNMENT_MAX);
 
 	BIND_ENUM_CONSTANT(CLOSE_BUTTON_SHOW_NEVER);
 	BIND_ENUM_CONSTANT(CLOSE_BUTTON_SHOW_ACTIVE_ONLY);
