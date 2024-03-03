@@ -53,16 +53,7 @@ Size2 TabBar::get_minimum_size() const {
 
 		int ofs = ms.width;
 
-		Ref<StyleBox> style;
-		if (tabs[i].disabled) {
-			style = theme_cache.tab_disabled_style;
-		} else if (current == i) {
-			style = theme_cache.tab_selected_style;
-		} else if (hover == i) {
-			style = theme_cache.tab_hovered_style;
-		} else {
-			style = theme_cache.tab_unselected_style;
-		}
+		Ref<StyleBox> style = _get_tab_style(i);
 		ms.width += style->get_minimum_size().width;
 
 		if (tabs[i].icon.is_valid()) {
@@ -424,17 +415,14 @@ void TabBar::_notification(int p_what) {
 				}
 
 				if (i != current) {
-					Ref<StyleBox> sb;
+					Ref<StyleBox> sb = _get_tab_style(i);
 					Color col;
 
 					if (tabs[i].disabled) {
-						sb = theme_cache.tab_disabled_style;
 						col = theme_cache.font_disabled_color;
 					} else if (i == hover) {
-						sb = theme_cache.tab_hovered_style;
 						col = theme_cache.font_hovered_color;
 					} else {
-						sb = theme_cache.tab_unselected_style;
 						col = theme_cache.font_unselected_color;
 					}
 
@@ -989,6 +977,7 @@ void TabBar::_update_cache(bool p_update_hover) {
 	int limit = get_size().width;
 	int limit_minus_buttons = limit - theme_cache.increment_icon->get_width() - theme_cache.decrement_icon->get_width();
 
+	// keep track how far we have drawn already
 	int w = 0;
 
 	max_drawn_tab = tabs.size() - 1;
@@ -1017,9 +1006,20 @@ void TabBar::_update_cache(bool p_update_hover) {
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
 			// if tab size is still to large we need to shrink h_seperation
+
+			int num_sep_applied = 2; // TODO: how often h_seperation was applied 
+			
+			int size_sepless = tabs[i].size_cache - theme_cache.h_separation * num_sep_applied; // size of the tab without seperation value
+			int mw = MAX(size_sepless, max_width); 
+			
+			theme_cache.h_separation = MAX(mw/num_sep_applied, 1);
+			tabs.write[i].size_cache = size_sepless + theme_cache.h_separation * num_sep_applied;
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
 			// if tab size is still to large we need to shrink icon_size
+		}
+		if (max_width > 0 && tabs[i].size_cache > max_width) {
+			// if tab size is still to large we need to shrink content_margins
 		}
 
 
@@ -1460,12 +1460,11 @@ void TabBar::move_tab(int p_from, int p_to) {
 	notify_property_list_changed();
 }
 
-int TabBar::_get_tab_width(int p_idx) const {
-	ERR_FAIL_INDEX_V(p_idx, tabs.size(), 0);
+Ref<StyleBox> TabBar::_get_tab_style(int p_idx) const {
+	ERR_FAIL_INDEX(p_idx, tabs.size());
 
 	Ref<StyleBox> style;
 
-	// Choose the correct style
 	if (tabs[p_idx].disabled) {
 		style = theme_cache.tab_disabled_style;
 	} else if (current == p_idx) {
@@ -1477,8 +1476,18 @@ int TabBar::_get_tab_width(int p_idx) const {
 		style = theme_cache.tab_unselected_style;
 	}
 
+	return style;
+}
+
+int TabBar::_get_tab_width(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, tabs.size(), 0);
+
+	Ref<StyleBox> style = _get_tab_style(p_idx);
+
 	// get content_margins 
-	int x = style->get_minimum_size().width;
+	int x = 0;
+	x += style->get_margin(SIDE_LEFT);
+	x += style->get_margin(SIDE_RIGHT);
 	int number_tab_elements = 0;
 
 	// add Icon
