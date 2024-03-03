@@ -996,7 +996,7 @@ void TabBar::_update_cache(bool p_update_hover) {
 	for (int i = 0; i < tabs.size(); i++) {
 		tabs.write[i].text_buf->set_width(-1);
 		tabs.write[i].size_text = Math::ceil(tabs[i].text_buf->get_size().x);
-		tabs.write[i].size_cache = get_tab_width(i); // SUPPOSED to be actual width of tab
+		tabs.write[i].size_cache = _get_tab_width(i); // SUPPOSED to be actual width of tab
 		// what should be included is: 
 		//
 		// border_width_left(if NO content_margin_left), 
@@ -1460,7 +1460,7 @@ void TabBar::move_tab(int p_from, int p_to) {
 	notify_property_list_changed();
 }
 
-int TabBar::get_tab_width(int p_idx) const {
+int TabBar::_get_tab_width(int p_idx) const {
 	ERR_FAIL_INDEX_V(p_idx, tabs.size(), 0);
 
 	Ref<StyleBox> style;

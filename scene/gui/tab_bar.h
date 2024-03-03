@@ -147,7 +147,7 @@ private:
 		Ref<StyleBox> button_hl_style;
 	} theme_cache;
 
-	int get_tab_width(int p_idx) const;
+	int _get_tab_width(int p_idx) const;
 	Size2 _get_tab_icon_size(int p_idx) const;
 	void _ensure_no_over_offset();
 	bool _can_deselect() const;
