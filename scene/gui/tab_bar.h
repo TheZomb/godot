@@ -148,6 +148,7 @@ private:
 	} theme_cache;
 
 	int _get_tab_width(int p_idx) const;
+	int _get_tab_sep_count(int p_idx) const;
 	Ref<StyleBox> _get_tab_style(int p_idx) const;
 	Size2 _get_tab_icon_size(int p_idx) const;
 	void _ensure_no_over_offset();

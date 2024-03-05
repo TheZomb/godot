@@ -1006,9 +1006,8 @@ void TabBar::_update_cache(bool p_update_hover) {
 			tabs.write[i].size_cache = size_textless + tabs[i].size_text; // after cutting the text update tab size
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
-			// if tab size is still to large we need to shrink h_seperation
-
-			int num_sep_applied = 2; // TODO: how often h_seperation was applied
+			// if tab size is still to large, shrink h_seperation
+			int num_sep_applied = _get_tab_sep_count(i);
 
 			int size_sepless = tabs[i].size_cache - theme_cache.h_separation * num_sep_applied; // size of the tab without seperation value
 			int mw = MAX(size_sepless, max_width);
@@ -1017,11 +1016,10 @@ void TabBar::_update_cache(bool p_update_hover) {
 			tabs.write[i].size_cache = size_sepless + theme_cache.h_separation * num_sep_applied;
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
-			// if tab size is still to large we need to shrink icon_size
+			// if tab size is still to large, shrink icon_size
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
-			// if tab size is still to large we need to shrink content_margins
-
+			// if tab size is still to large, shrink content_margins
 			int left_margin = (int)style->get_margin(SIDE_LEFT);
 			int right_margin = (int)style->get_margin(SIDE_RIGHT);
 			int size_marginless = tabs[i].size_cache - left_margin - right_margin;
@@ -1488,6 +1486,18 @@ Ref<StyleBox> TabBar::_get_tab_style(int p_idx) const {
 	return style;
 }
 
+// get the count how often the tab seperation was applied
+int TabBar::_get_tab_sep_count(int p_idx) const {
+	int num_sep_applied = -1; 
+
+	if (tabs[p_idx].icon.is_valid()) num_sep_applied++;
+	if (!tabs[p_idx].text.is_empty()) num_sep_applied++;
+	bool close_visible = cb_displaypolicy == CLOSE_BUTTON_SHOW_ALWAYS || (cb_displaypolicy == CLOSE_BUTTON_SHOW_ACTIVE_ONLY && p_idx == current);
+	if (close_visible) num_sep_applied++;
+
+	return MAX(0, num_sep_applied);
+}
+
 int TabBar::_get_tab_width(int p_idx) const {
 	ERR_FAIL_INDEX_V(p_idx, tabs.size(), 0);
 
@@ -1497,19 +1507,16 @@ int TabBar::_get_tab_width(int p_idx) const {
 	int x = 0;
 	x += style->get_margin(SIDE_LEFT);
 	x += style->get_margin(SIDE_RIGHT);
-	int number_tab_elements = 0;
 
 	// add Icon
 	if (tabs[p_idx].icon.is_valid()) {
 		const Size2 icon_size = _get_tab_icon_size(p_idx);
 		x += icon_size.width;
-		number_tab_elements++;
 	}
 
 	// add Text
 	if (!tabs[p_idx].text.is_empty()) {
 		x += tabs[p_idx].size_text;
-		number_tab_elements++;
 	}
 
 	// add Close Button
@@ -1519,11 +1526,11 @@ int TabBar::_get_tab_width(int p_idx) const {
 		Ref<StyleBox> btn_style = theme_cache.button_hl_style;
 		Ref<Texture2D> cb = theme_cache.close_icon;
 		x += btn_style->get_margin(SIDE_LEFT) + cb->get_width() + btn_style->get_margin(SIDE_RIGHT); // right margin should obviously be added too
-		number_tab_elements++;
 	}
 
 	// Space between elements
-	x += MAX((number_tab_elements - 1) * theme_cache.h_separation, 0);
+	int sep_count = _get_tab_sep_count(p_idx);
+	x += sep_count * theme_cache.h_separation;
 
 	return x;
 }
