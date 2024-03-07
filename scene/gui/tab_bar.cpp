@@ -36,6 +36,7 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/main/viewport.h"
 #include "scene/theme/theme_db.h"
+#include <iostream>
 
 Size2 TabBar::get_minimum_size() const {
 	Size2 ms;
@@ -1007,6 +1008,7 @@ void TabBar::_update_cache(bool p_update_hover) {
 		}
 		if (max_width > 0 && tabs[i].size_cache > max_width) {
 			// if tab size is still to large, shrink h_seperation
+			// TODO: the h_seperation maybe gets changed for all tabs. Is that a problem?
 			int num_sep_applied = _get_tab_sep_count(i);
 			if (num_sep_applied > 0) {
 				int size_sepless = tabs[i].size_cache - theme_cache.h_separation * num_sep_applied; // size of the tab without h_seperation
@@ -1027,9 +1029,9 @@ void TabBar::_update_cache(bool p_update_hover) {
 				// TODO: actual theme gets overwritten. instead only the single element should change margin property
 				int size_marginless = tabs[i].size_cache - left_margin - right_margin;
 				int mw = MAX(size_marginless, max_width);
-
-				style->set_content_margin(SIDE_LEFT, (mw - size_marginless) * (left_margin / (left_margin + right_margin)));
-				style->set_content_margin(SIDE_RIGHT, (mw - size_marginless) * (right_margin / (left_margin + right_margin)));
+				
+				style->set_content_margin(SIDE_LEFT, (mw - size_marginless) * ((float)left_margin / (left_margin + right_margin)));
+				style->set_content_margin(SIDE_RIGHT, (mw - size_marginless) * ((float)right_margin / (left_margin + right_margin)));
 				tabs.write[i].size_cache = size_marginless + style->get_content_margin(SIDE_LEFT) + style->get_content_margin(SIDE_RIGHT);
 			}
 		}
